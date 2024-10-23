@@ -3,30 +3,25 @@
 /*                                                        :::      ::::::::   */
 /*   builtin_env.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: geonwkim <geonwkim@student.42.fr>          +#+  +:+       +#+        */
+/*   By: hosokawa <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/08/25 23:30:02 by geonwkim          #+#    #+#             */
-/*   Updated: 2024/09/08 19:18:20 by geonwkim         ###   ########.fr       */
+/*   Created: 2024/10/15 10:43:45 by hosokawa          #+#    #+#             */
+/*   Updated: 2024/10/22 13:23:10 by hosokawa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/minishell.h"
-#include "../include/builtin.h"
-#include <stdio.h>
+#include "myshell.h"
 
-// if (cur->value)
-// map_get(envmap, cur->name);
-int	builtin_env(char **argv, t_map *envmap)
+int	builtin_env(t_prompt_info *info)
 {
-	t_item	*cur;
+	t_item	*item;
 
-	(void)argv;
-	cur = envmap->item_head.next;
-	while (cur)
+	item = info->map->item;
+	while (item != NULL)
 	{
-		if (cur->value)
-			printf("%s=%s\n", cur->name, cur->value);
-		cur = cur->next;
+		if (item->value)
+			printf("%s=%s\n", item->name, item->value);
+		item = item->next;
 	}
 	printf("_=/usr/bin/env\n");
 	return (0);

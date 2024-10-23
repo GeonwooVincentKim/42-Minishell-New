@@ -3,81 +3,48 @@
 /*                                                        :::      ::::::::   */
 /*   error.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: geonwkim <geonwkim@student.42.fr>          +#+  +:+       +#+        */
+/*   By: hosokawa <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/07/15 15:45:06 by geonwkim          #+#    #+#             */
-/*   Updated: 2024/08/30 01:03:55 by geonwkim         ###   ########.fr       */
+/*   Created: 2024/09/14 13:09:32 by hosokawa          #+#    #+#             */
+/*   Updated: 2024/10/22 13:38:10 by hosokawa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/error.h"
+#include "myshell.h"
 
-/* 
-	Assertion Error
+void	fatal_error_exit(char *err_msg) __attribute__((noreturn));
 
-	1. sprintf()
-	sprintf()は、フォーマットされたデータを文字列として返し、
-	ユーザはそれを保存したり、適切な操作や表示を行うことができる。
-
-	2. fwrite()
-	fwrite()への言及も見たことがあるかもしれない。
-	fprintf(fid,...)は(この目的では)fwrite(fid,sprintf(...))と同じだが、
-	fprintf()は接続されたデバイスに書き出す前に文字列全体を構築する必要は(理論的には)ない。
-	
-	3. fprintf()
-	fprintf()はsprintfとfwriteの組み合わせの利便性と考えることもできるが、
-	持つ価値があるほど頻繁に使用される利便性である。
-
-	<assert_error code by Hosokaw>
-	perror_prefix();
-	fprintf(stderr, "Error: %s\n", message);
-*/
-
-void	perror_prefix(void);
-// bool	*get_syntax_error_ptr(void);
-
-//	exit(EXIT_FAILURE);
-void	assert_error(const char *msg)
+void	perror_prestr(void)
 {
-	perror_prefix();
-	dprintf(STDERR_FILENO, "Assert Error: %s\n", msg);
-	exit(255);
+	write(STDERR_FILENO, ERROR_PRESTR, ft_strlen(ERROR_PRESTR));
 }
 
-/* Fatal Error */
-void	fatal_error(const char *msg)
+void	fatal_error_exit(char *err_msg)
 {
-	perror_prefix();
-	dprintf(STDERR_FILENO, "Fatal Error: %s\n", msg);
-	exit(1);
+	perror_prestr();
+	perror(err_msg);
+	exit(EXIT_FAILURE);
 }
 
-/* Leave from the error */
-void	error_exit(const char *l, const char *msg, int status)
+void	yourser_error_exit(char *err_msg)
 {
-	perror_prefix();
-	dprintf(STDERR_FILENO, "%s: %s\n", l, msg);
-	exit(status);
+	perror_prestr();
+	write(STDERR_FILENO, err_msg, ft_strlen(err_msg));
+	write(STDERR_FILENO, "\n", 1);
+	exit(EXIT_FAILURE);
 }
 
-void	tokenize_error(const char *l, char **rest, char *line, \
-	t_status *status)
+void	minishell_yourser_perror(t_prompt_info *info, char *err_msg)
 {
-	status->syntax_error = true;
-	perror_prefix();
-	dprintf(STDERR_FILENO, \
-		"syntax error near unexpected character `%c' in %s\n", *line, l);
-	while (*line)
-		line++;
-	*rest = line;
+	info->yourser_err = 1;
+	perror_prestr();
+	write(STDERR_FILENO, err_msg, ft_strlen(err_msg));
+	write(STDERR_FILENO, "\n", 1);
 }
 
-void	parse_error(t_token **rest, t_token *token)
+void	minishell_perror(t_prompt_info *info, char *err_msg)
 {
-	perror_prefix();
-	dprintf(STDERR_FILENO,
-		"syntax error near unexpected token `%s'\n", token->word);
-	while (token && !at_eof(token))
-		token = token->next;
-	*rest = token;
+	info->yourser_err = 1;
+	perror_prestr();
+	perror(err_msg);
 }

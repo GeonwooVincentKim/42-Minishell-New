@@ -1,41 +1,74 @@
-SRCS	= ft_isalpha.c ft_isdigit.c ft_isalnum.c ft_isascii.c \
-		ft_isprint.c ft_strlen.c ft_memset.c ft_bzero.c \
-		ft_memcpy.c ft_memmove.c ft_strlcpy.c ft_strcat.c ft_strlcat.c \
-		ft_toupper.c ft_tolower.c ft_strchr.c ft_strrchr.c ft_strncat.c \
-		ft_strcmp.c ft_strncmp.c ft_memchr.c ft_memcmp.c \
-		ft_strnchr.c ft_strstr.c ft_strnstr.c \
-		ft_atoi.c ft_calloc.c ft_strdup.c ft_strndup.c ft_substr.c \
-		ft_strjoin.c ft_strtrim.c ft_split.c ft_itoa.c \
-		ft_strmapi.c ft_striteri.c ft_putchar_fd.c \
-		ft_putstr_fd.c ft_putendl_fd.c ft_putnbr_fd.c
-SRCS_BONUS	=	ft_lstnew_bonus.c ft_lstadd_front_bonus.c ft_lstsize_bonus.c ft_lstlast_bonus.c ft_lstadd_back_bonus.c ft_lstdelone_bonus.c ft_lstclear_bonus.c ft_lstiter_bonus.c ft_lstmap_bonus.c
-# SRCS    = $(wildcard ft_*.c)
-OBJS	= $(SRCS:.c=.o)
-OBJS_BONUS = $(SRCS_BONUS:.c=.o)
-# INCS	= -I includes
-NAME	= libft.a
-CC		= cc
-RM		= rm -f
-CFLAGS	= -Wall -Wextra -Werror
 
-%.o:%.c
-	$(CC) $(CFLAGS) -c $< -o $@
+CC = cc
+CFLAGS = -Wall -Wextra -Werror
+INCDIR=include
+SRCS=src/ft_atoi.c \
+	src/ft_memset.c \
+	src/ft_strlcat.c \
+	src/ft_bzero.c \
+	src/ft_p_output.c \
+	src/ft_strlcpy.c \
+	src/ft_c_output.c \
+	src/ft_percent_output.c \
+	src/ft_strlen.c \
+	src/ft_calloc.c \
+	src/ft_printf.c \
+	src/ft_strmapi.c \
+	src/ft_d_output.c \
+	src/ft_printf_numComvert.c \
+	src/ft_strncmp.c \
+	src/ft_i_output.c \
+	src/ft_printf_util.c \
+	src/ft_strnstr.c \
+	src/ft_isalnum.c \
+	src/ft_putchar_fd.c \
+	src/ft_strrchr.c \
+	src/ft_isalpha.c \
+	src/ft_putendl_fd.c \
+	src/ft_strtrim.c \
+	src/ft_isascii.c \
+	src/ft_putnbr_fd.c \
+	src/ft_substr.c \
+	src/ft_isdigit.c \
+	src/ft_putstr_fd.c \
+	src/ft_tolower.c \
+	src/ft_isprint.c \
+	src/ft_s_output.c \
+	src/ft_toupper.c \
+	src/ft_itoa.c \
+	src/ft_split.c \
+	src/ft_u_output.c \
+	src/ft_memchr.c \
+	src/ft_strchr.c \
+	src/ft_x_output.c \
+	src/ft_memcmp.c \
+	src/ft_strdup.c \
+	src/ft_xx_output.c \
+	src/ft_memcpy.c \
+	src/ft_striteri.c \
+	src/get_next_line.c \
+	src/ft_memmove.c \
+	src/ft_strjoin.c \
+	src/get_next_line_utils.c
 
-$(NAME): $(OBJS)
-	ar rcs $(NAME) $(OBJS)
+OBJS = $(SRCS:.c=.o)
+Library= ar rc
+NAME = libft.a
 
-bonus: $(OBJS_BONUS)
-	touch bonus
-	ar rcs $(NAME) $(OBJS_BONUS)
+all : $(NAME)
 
-all: $(NAME)
+$(NAME):$(OBJS)
+	$(Library) $@ $^
+
+%.o: %.c
+	$(CC) $(CFLAGS) -I$(INCDIR) -c -o $@ $<
 
 clean:
-	$(RM) $(OBJS) $(OBJS_BONUS) bonus
+	rm -f $(OBJS)
 
-fclean:	clean
-	$(RM) $(NAME)
+fclean : clean
+	rm -f $(NAME)
 
-re:	fclean	all
+re : fclean all 
 
-.PHONY:	all clean fclean re
+.PHONY: all clean fclean re

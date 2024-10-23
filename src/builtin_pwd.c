@@ -3,51 +3,53 @@
 /*                                                        :::      ::::::::   */
 /*   builtin_pwd.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: geonwkim <geonwkim@student.42.fr>          +#+  +:+       +#+        */
+/*   By: hosokawa <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/08/30 01:59:40 by geonwkim          #+#    #+#             */
-/*   Updated: 2024/08/30 03:05:32 by geonwkim         ###   ########.fr       */
+/*   Created: 2024/10/15 10:38:34 by hosokawa          #+#    #+#             */
+/*   Updated: 2024/10/22 13:32:27 by hosokawa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/minishell.h"
-#include "../include/builtin.h"
+#include "myshell.h"
 
-bool	equal_inode(const char *path1, const char *path2)
+bool	equal_path(const char *path1, const char *path2)
 {
-	struct stat	st1;
-	struct stat	st2;
+	struct stat	pt1;
+	struct stat	pt2;
 
-	ft_memset(&st1, 0, sizeof(st1));
-	ft_memset(&st2, 0, sizeof(st2));
-	if (stat(path1, &st1) < 0)
-		fatal_error("stat");
-	if (stat(path2, &st2) < 0)
-		fatal_error("stat");
-	return (st1.st_ino == st2.st_ino);
+	ft_memset(&pt1, 0, sizeof(pt1));
+	ft_memset(&pt2, 0, sizeof(pt2));
+	if (stat(path1, &pt1) < 0)
+		printf("error\n");
+	if (stat(path2, &pt2) < 0)
+		printf("error\n");
+	if (pt1.st_ino == pt2.st_ino)
+		return (true);
+	else
+		return (false);
 }
 
-int	builtin_pwd(char **argv)
+int	builtin_pwd(t_prompt_info *info, char **argv)
 {
 	char	*pwd;
 	char	cwd[PATH_MAX];
 
 	(void)argv;
-	pwd = getenv("PWD");
-	if (pwd == NULL || !equal_inode(pwd, "."))
+	pwd = search_value(info->map->item, "PWD");
+	if (pwd == NULL || !equal_path(pwd, "."))
 	{
 		if (getcwd(cwd, PATH_MAX) == NULL)
 		{
-			builtin_error("pwd", NULL, "getcwd");
+			printf("error\n");
 			return (1);
 		}
-		write(STDOUT_FILENO, cwd, strlen(cwd));
+		write(STDOUT_FILENO, cwd, ft_strlen(cwd));
 		write(STDOUT_FILENO, "\n", 1);
 		return (0);
 	}
 	else
 	{
-		write(STDOUT_FILENO, pwd, strlen(pwd));
+		write(STDOUT_FILENO, pwd, ft_strlen(pwd));
 		write(STDOUT_FILENO, "\n", 1);
 		return (0);
 	}

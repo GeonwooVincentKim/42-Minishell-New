@@ -3,154 +3,45 @@
 /*                                                        :::      ::::::::   */
 /*   tokenizer.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: geonwkim <geonwkim@student.42.fr>          +#+  +:+       +#+        */
+/*   By: hosokawa <hosokawa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/07/15 15:35:53 by geonwkim          #+#    #+#             */
-/*   Updated: 2024/08/25 18:08:31 by geonwkim         ###   ########.fr       */
+/*   Created: 2024/09/15 10:37:11 by hosokawa          #+#    #+#             */
+/*   Updated: 2024/10/22 15:53:36 by hosokawa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include	"../include/minishell.h"
-#include "../libft/libft.h"
+#include "myshell.h"
 
-t_token	*new_token(char *word, t_token_kind kind)
+char	*space_skip(char *prompt)
 {
-	t_token	*tok;
-
-	tok = ft_calloc(1, sizeof(*tok));
-	if (!tok)
-		fatal_error("calloc");
-	tok->word = word;
-	tok->kind = kind;
-	return (tok);
-}
-
-// t_token	*operator(t_token *current, char **input_p)
-/*
-	These codes should be in next to the `else` statement
-	current->next = new_current;
-	current = new_current;
-*/
-t_token	*operator(char **rest, char *line)
-{
-	static char *const	operators[] = {\
-		">>", "<<", "||", "&&", ";;", "<", ">", "&", ";", "(", ")", "|", "\n"};
-	size_t				i;
-	char				*op;
-
-	i = 0;
-	while (i < sizeof(operators) / sizeof(*operators))
+	while (*prompt)
 	{
-		if (operators_cmp(line, operators[i]))
-		{
-			op = ft_strdup(operators[i]);
-			if (op == NULL)
-				fatal_error("strdup");
-			*rest = line + ft_strlen(op);
-			return (new_token(op, TK_OP));
-		}
-		i++;
-	}
-	assert_error("Unexpected operator");
-}
-
-// t_token	*word(t_token *current, char **input_p)
-/* 	
-	while ((**input_p) && !is_metacharacter(**input_p))
-	(*input_p)++;
-*/
-t_token	*word(char **rest, char *line, t_status *status)
-{
-	char	*word;
-	char	*input_head;
-
-	input_head = line;
-	while (*line && !is_metacharacter(*line))
-	{
-		if (*line == SINGLE_QUOTE_CHAR)
-			skip_single_quote(&line, status);
-		else if (*line == DOUBLE_QUOTE_CHAR)
-			skip_double_quote(&line, status);
+		if (*prompt == ' ' || *prompt == '\t')
+			prompt++;
 		else
-			line++;
+			return (prompt);
 	}
-	word = ft_strndup(input_head, line - input_head);
-	if (word == NULL)
-		fatal_error("strndup");
-	*rest = line;
-	return (new_token(word, TK_WORD));
+	return (prompt);
 }
 
-/*
-	(Additional part in Linux)
-	If removes this part, the current pointer will not be updated
-	to point to the new Token.
-
-	The current pointer will keep pointing to the same token.
-	Each new token created (new_current) will not be linked into the list.
-
-	The linked list will not be built correctly, leading to an incomplete
-	or empty token list.
-	
-	(Linuxでの追加部分）
-	この部分を削除すると、現在のポインタは新しいトークンを指すように更新されません。
-
-	現在のポインタは同じトークンを指し続けます。
-	新しく作成された各トークン（new_current）は
-	リストにリンクされません。
-
-	リンクリストは正しく構築されず、トークン・リストが不完全または空になります。
-*/
-static void	add_token(t_token **current, t_token *new_token)
+t_token_info	*tokenizer(t_prompt_info *info, char *prompt)
 {
-	(*current)->next = new_token;
-	*current = new_token;
-}
+	t_token_info	root_tk;
+	t_token_info	*token;
 
-/*
-	These codes should be in next to the `else` statement
-
-	current->next = new_current;
-	current = new_current;
-*/
-t_token	*tokenizer(char *input_p, t_status *status)
-{
-	t_token	*current;
-	t_token	*new_current;
-	t_token	head;
-
-	head.next = NULL;
-	current = &head;
-	while (*input_p)
+	root_tk.word = NULL;
+	root_tk.kind = 0;
+	root_tk.next = NULL;
+	token = &root_tk;
+	while (*prompt)
 	{
-		new_current = NULL;
-		if (consume_blank(&input_p, input_p))
-			continue ;
-		else if (is_metacharacter(*input_p))
-			new_current = operator(&input_p, input_p);
-		else if (is_word(input_p))
-			new_current = word(&input_p, input_p, status);
-		else
-			tokenize_error("Unexpected Token", &input_p, input_p, status);
-		if (new_current)
-			add_token(&current, new_current);
+		prompt = space_skip(prompt);
+		if (*prompt == '\0')
+			break ;
+		token = make_token(info, &prompt, token);
+		if (info->yourser_err == 1)
+			return (root_tk.next);
 	}
-	add_token(&current, new_token(NULL, TK_EOF));
-	return (head.next);
+	token->next = make_eof_token();
+	return (root_tk.next);
 }
-
-////文字列（終端あり）の比較ではなく
-//int	main(int argc, char **argv)
-//{
-//	t_token	*tok;
-//
-//	if (argc != 2)
-//		return (1);
-//	tok = tokenizer(argv[1]);
-//	while (tok->word != NULL)
-//	{
-//		printf("%s ", tok->word);
-//		tok = tok->next;
-//	}
-//	return (0);
-//}

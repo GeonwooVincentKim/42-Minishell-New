@@ -3,133 +3,52 @@
 /*                                                        :::      ::::::::   */
 /*   builtin_export.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: geonwkim <geonwkim@student.42.fr>          +#+  +:+       +#+        */
+/*   By: hosokawa <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/08/25 04:11:17 by geonwkim          #+#    #+#             */
-/*   Updated: 2024/09/12 23:20:10 by geonwkim         ###   ########.fr       */
+/*   Created: 2024/10/15 10:42:35 by hosokawa          #+#    #+#             */
+/*   Updated: 2024/10/22 13:31:49 by hosokawa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/minishell.h"
-#include "../include/builtin.h"
-#include "../include/hashmap.h"
-#include <stdio.h>
+#include "myshell.h"
 
-char	*map_get(t_map *map, const char *name);
-
-// Function to count the number of environment variables
-size_t	count_env(t_map *envmap)
+void	print_all_env(t_prompt_info *info)
 {
-	t_item	*cur;
-	size_t	count;
+	t_item	*item;
 
-	count = 0;
-	cur = envmap->item_head.next;
-	while (cur)
+	item = info->map->item;
+	while (item != NULL)
 	{
-		count++;
-		cur = cur->next;
-	}
-	return (count);
-}
-
-// Function to copy the environment variable names into an array
-char	**get_env_names(t_map *envmap)
-{
-	size_t	count;
-	char	**env_names;
-	t_item	*cur;
-	size_t	i;
-
-	count = count_env(envmap);
-	env_names = malloc(sizeof(char *) * (count + 1));
-	if (!env_names)
-		return (NULL);
-	cur = envmap->item_head.next;
-	i = 0;
-	while (cur)
-	{
-		env_names[i] = ft_strdup(cur->name);
-		cur = cur->next;
-		i++;
-	}
-	env_names[i] = NULL;
-	return (env_names);
-}
-
-// Custom bubble sort function with while loops
-void	bubble_sort_env_names(char **env_names, size_t count)
-{
-	size_t	i;
-	size_t	j;
-	char	*temp;
-	int		swapped;
-
-	i = 0;
-	while (i < count - 1)
-	{
-		j = 0;
-		swapped = 0;
-		while (j < count - i - 1)
+		if (item->value)
 		{
-			if (ft_strcmp(env_names[j], env_names[j + 1]) > 0)
-			{
-				temp = env_names[j];
-				env_names[j] = env_names[j + 1];
-				env_names[j + 1] = temp;
-				swapped = 1;
-			}
-			j++;
+			printf("declare -x %s=\"%s\"\n", item->name, item->value);
 		}
-		if (swapped == 0)
-			break ;
-		i++;
+		else
+		{
+			printf("declare -x %s\n", item->name);
+		}
+		item = item->next;
 	}
 }
 
-void	print_allenv(t_map *envmap)
-{
-	char	**env_names;
-	size_t	count;
-	size_t	i;
-
-	env_names = get_env_names(envmap);
-	if (!env_names)
-		return ;
-	count = count_env(envmap);
-	bubble_sort_env_names(env_names, count);
-	i = 0;
-	while (i < count)
-	{
-		print_env_for_name(envmap, env_names[i]);
-		free(env_names[i]);
-		i++;
-	}
-	free(env_names);
-}
-
-// Main builtin_export function
-int	builtin_export(char **argv, t_map *envmap)
+int	builtin_export(t_prompt_info *info, char **argv)
 {
 	size_t	i;
 	int		status;
 
-	status = 0;
-	if (!argv[1])
+	if (argv[1] == NULL)
 	{
-		print_allenv(envmap);
+		print_all_env(info);
 		return (0);
 	}
+	status = 0;
 	i = 1;
 	while (argv[i])
 	{
-		if (ft_strchr(argv[i], '+') && ft_strstr(argv[i], "+="))
-			status |= handle_export_append(envmap, argv[i]);
-		else if (!ft_strchr(argv[i], '='))
-			status |= handle_export_no_equals(argv[i], envmap);
-		else if (!is_identifier(argv[i]) || map_put(envmap, argv[i], true) < 0)
+		item_put(info, info->map, argv[i], 1);
+		if (info->yourser_err == 1)
 		{
-			builtin_error("export", argv[i], "not a valid identifier");
+			minishell_yourser_perror(info, "faild to export");
 			status = 1;
 		}
 		i++;

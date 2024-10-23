@@ -3,68 +3,62 @@
 /*                                                        :::      ::::::::   */
 /*   signal.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: geonwkim <geonwkim@student.42.fr>          +#+  +:+       +#+        */
+/*   By: hosokawa <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/08/09 22:35:37 by geonwkim          #+#    #+#             */
-/*   Updated: 2024/08/25 18:09:57 by geonwkim         ###   ########.fr       */
+/*   Created: 2024/10/09 12:19:01 by hosokawa          #+#    #+#             */
+/*   Updated: 2024/10/23 19:21:28 by dhosokaw         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <unistd.h>
-#include <signal.h>
-#include "../include/minishell.h"
+#include "myshell.h"
 
-volatile sig_atomic_t	g_sig = 0;
-
-void	handler(int signum)
-{
-	g_sig = signum;
-}
-
-void	reset_sig(int signum)
+void	reset_signal(int signum)
 {
 	struct sigaction	sa;
 
-	sigemptyset(&sa.sa_mask);
+	if (sigemptyset(&sa.sa_mask) < 0)
+		fatal_error_exit("failed to sigemptyset");
 	sa.sa_flags = 0;
 	sa.sa_handler = SIG_DFL;
 	if (sigaction(signum, &sa, NULL) < 0)
-		fatal_error("sigaction");
+		fatal_error_exit("failed to sigaciton");
 }
 
-void	ignore_sig(int signum)
+void	ignore_signal(int signum)
 {
 	struct sigaction	sa;
 
-	sigemptyset(&sa.sa_mask);
+	if (sigemptyset(&sa.sa_mask) < 0)
+		fatal_error_exit("failed to sigemptyset");
 	sa.sa_flags = 0;
 	sa.sa_handler = SIG_IGN;
 	if (sigaction(signum, &sa, NULL) < 0)
-		fatal_error("sigaction");
+		fatal_error_exit("failed to sigaction");
 }
 
-void	setup_sigint(void)
+void	ready_signal(int signum)
 {
 	struct sigaction	sa;
 
-	sigemptyset(&sa.sa_mask);
+	if (sigemptyset(&sa.sa_mask) < 0)
+		fatal_error_exit("failed to sigemptyset");
 	sa.sa_flags = 0;
 	sa.sa_handler = handler;
-	if (sigaction(SIGINT, &sa, NULL) < 0)
-		fatal_error("sigaction");
+	if (sigaction(signum, &sa, NULL) < 0)
+		fatal_error_exit("failed to sigaction");
 }
 
-int	check_state(void)
+void	init_signal(void)
 {
-	if (g_sig == 0)
-		return (0);
-	else if (g_sig == SIGINT)
-	{
-		g_sig = 0;
-		g_readline_interrupted = true;
-		rl_replace_line("", 0);
-		rl_done = 1;
-		return (0);
-	}
-	return (0);
+	if (isatty(STDIN_FILENO))
+		rl_event_hook = event;
+	rl_catch_signals = 0;
+	ignore_signal(SIGQUIT);
+	ready_signal(SIGINT);
+}
+
+void	destroy_signal(void)
+{
+	reset_signal(SIGQUIT);
+	reset_signal(SIGINT);
 }

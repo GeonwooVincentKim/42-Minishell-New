@@ -3,48 +3,51 @@
 /*                                                        :::      ::::::::   */
 /*   pipe.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: geonwkim <geonwkim@student.42.fr>          +#+  +:+       +#+        */
+/*   By: hosokawa <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/08/01 16:57:27 by geonwkim          #+#    #+#             */
-/*   Updated: 2024/08/25 18:08:31 by geonwkim         ###   ########.fr       */
+/*   Created: 2024/09/23 15:16:31 by hosokawa          #+#    #+#             */
+/*   Updated: 2024/10/22 15:17:01 by hosokawa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include	"../include/minishell.h"
-#include	"../libft/libft.h"
-
-static void	cpy_pipe(int dst[2], int src[2]);
-
-void	prepare_pipe(t_node *node)
-{
-	if (node->next == NULL)
-		return ;
-	if (pipe(node->out_pipe) < 0)
-		fatal_error("pipe");
-	cpy_pipe(node->next->in_pipe, node->out_pipe);
-}
-
-void	prepare_pipe_child(t_node *node)
-{
-	close(node->out_pipe[0]);
-	dup2(node->in_pipe[0], STDIN_FILENO);
-	if (node->in_pipe[0] != STDIN_FILENO)
-		close(node->in_pipe[0]);
-	dup2(node->out_pipe[1], STDOUT_FILENO);
-	if (node->out_pipe[1] != STDOUT_FILENO)
-		close(node->out_pipe[1]);
-}
-
-void	prepare_pipe_parent(t_node *node)
-{
-	if (node->in_pipe[0] != STDIN_FILENO)
-		close(node->in_pipe[0]);
-	if (node->next)
-		close(node->out_pipe[1]);
-}
+#include "myshell.h"
 
 static void	cpy_pipe(int dst[2], int src[2])
 {
 	dst[0] = src[0];
 	dst[1] = src[1];
+}
+
+void	prepare_pipe(t_prompt_info *info, t_node_info *node)
+{
+	if (node->re_node != NULL)
+	{
+		if (pipe(node->outpipe) == -1)
+		{
+			minishell_perror(info, "failed to create a pipe");
+			return ;
+		}
+		cpy_pipe(node->re_node->inpipe, node->outpipe);
+	}
+}
+
+void	prepare_pipe_child(t_node_info *node)
+{
+	close(node->outpipe[0]);
+	if (dup2(node->inpipe[0], STDIN_FILENO) == -1)
+		fatal_error_exit("failed to dup2 a pipe");
+	if (node->inpipe[0] != STDIN_FILENO)
+		close(node->inpipe[0]);
+	if (dup2(node->outpipe[1], STDOUT_FILENO) == -1)
+		fatal_error_exit("failed to dup2 a pipe");
+	if (node->outpipe[1] != STDOUT_FILENO)
+		close(node->outpipe[1]);
+}
+
+void	prepare_pipe_parent(t_node_info *node)
+{
+	if (node->inpipe[0] != STDIN_FILENO)
+		close(node->inpipe[0]);
+	if (node->re_node)
+		close(node->outpipe[1]);
 }

@@ -1,99 +1,100 @@
-NAME = minishell
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#    Makefile                                           :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#    By: hosokawa <marvin@42.fr>                    +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#    Created: 2024/09/14 13:58:08 by hosokawa          #+#    #+#              #
+#    Updated: 2024/10/23 18:40:11 by hosokawa         ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
 
-CC = cc
+CC=cc
+CFLAGS=-Wall -Wextra -Werror
+#INCDIR=-Iinclude 
+INCDIR=-Iinclude -I/opt/homebrew/opt/readline/include  
+LIBDIR=libft
+#LIBS=-lreadline
+LIBS=-L/opt/homebrew/opt/readline/lib -lreadline -L$(LIBDIR) -lft
 
-# RLDIR	= $(shell --prefix readline)
-# INCLUDES = -I include -I libft
-# CFLAGS = -Wall -Werror -Wextra $(INCLUDES)
-# LIBRARY =	-lreadline -L $(RLDIR)/lib libft -lft
-INCLUDES = -I include -I libft
-CFLAGS = -Wall -Werror -Wextra -g $(INCLUDES)
-LIBRARY =	-lreadline -L libft -lft
-# SOURCES = 	./src/last_status.c \
-# 			./src/error_utils.c \
-# 			./src/error.c \
-# 			./src/read_pipe.c \
-# 			./src/readline.c \
-# 			./src/tokenizer_quotes.c \
-# 			./src/tokenizer_utils.c \
-# 			./src/tokenizer.c \
-# 			./src/do_command.c \
-# 			./src/do_command_utils.c \
-# 			./src/expand_special_parameter.c \
-# 			./src/expand_utils.c \
-# 			./src/expand_quote.c \
-# 			./src/expand.c \
-# 			./src/parse_pipe.c \
-# 			./src/parse_redirection.c \
-# 			./src/parse_append.c \
-# 			./src/parse.c \
-# 			./src/destructor.c \
-# 			./src/redirect_utils.c \
-# 			./src/redirect.c \
-# 			./src/pipe.c
-SOURCES = 	./src/error_env_pipe.c \
-			./src/error_utils.c \
-			./src/error.c \
-			./src/read_pipe.c \
-			./src/readline.c \
-			./src/tokenizer_quotes.c \
-			./src/tokenizer_utils.c \
-			./src/tokenizer.c \
-			./src/do_command.c \
-			./src/do_command_utils.c \
-			./src/expand_special_parameter.c \
-			./src/expand_utils.c \
-			./src/expand_quote.c \
-			./src/expand.c \
-			./src/parse_pipe.c \
-			./src/parse_redirection.c \
-			./src/parse_append.c \
-			./src/parse.c \
-			./src/destructor.c \
-			./src/redirect_utils.c \
-			./src/redirect.c \
-			./src/pipe.c \
-			./src/signal.c \
-			./src/signal_utils.c \
-			./src/builtin.c \
-			./src/builtin_exit.c \
-			./src/export_handler.c \
-			./src/export_get_variable.c \
-			./src/builtin_export.c \
-			./src/builtin_unset.c \
-			./src/builtin_env.c \
-			./src/builtin_cd.c \
-			./src/builtin_echo.c \
-			./src/builtin_pwd.c \
-			./src/map_putter.c \
-			./src/map_setter.c \
-			./src/map_utils.c \
-			./src/map.c \
-			./src/env.c
 
-OBJECTS = $(SOURCES:.c=.o)
+SRCS=src/builtin.c \
+	src/parser.c \
+	src/builtin_cd.c \
+	src/parser_append.c \
+	src/builtin_cd_utils.c \
+	src/parser_append_redirect.c \
+	src/builtin_echo.c \
+	src/parser_append_utils.c \
+	src/builtin_env.c \
+	src/path_finder.c \
+	src/builtin_exit.c \
+	src/pipe.c \
+	src/builtin_export.c \
+	src/readline.c \
+	src/builtin_pwd.c \
+	src/redirect_prepare.c \
+	src/builtin_unset.c \
+	src/redirect_prepare_element.c \
+	src/builtin_utils.c \
+	src/redirect_prepare_heredoc.c \
+	src/error.c \
+	src/redirect_prepare_heredoc_utils.c \
+	src/error_token_parse.c \
+	src/redirect_set_reset.c \
+	src/exec.c \
+	src/shell_map.c \
+	src/exec_mlt_process.c \
+	src/shell_map_set_unset.c \
+	src/exec_mlt_process_utils.c \
+	src/shell_map_utils.c \
+	src/expand.c \
+	src/shell_refunc_atol.c \
+	src/expand_expander.c \
+	src/shell_refunc_first.c \
+	src/expand_expander_element.c \
+	src/shell_refunc_second.c \
+	src/expand_expander_element_utils.c \
+	src/signal.c \
+	src/expand_expander_utils.c \
+	src/signal_handler.c \
+	src/expand_memory_utils.c \
+	src/tokenizer.c \
+	src/expand_remover.c \
+	src/tokenizer_make_token.c \
+	src/free.c \
+	src/tokenizer_make_token_utils.c \
+	src/free_operation.c \
+	src/tokenizer_utils.c \
+	src/info_data.c
 
-all: $(NAME)
+OBJS=$(SRCS:.c=.o)
 
-$(NAME): $(OBJECTS) libft
-	$(CC) $(OBJECTS) $(LIBRARY) -o $(NAME)
+LIB_NAME=libft.a
+NAME=minishell
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
 
-libft:
-	make -C libft
+all:$(LIB_NAME) $(NAME) 
+
+$(NAME):$(OBJS)
+	$(CC)  $(CFLAGS) -L$(LIBDIR) -lft $(OBJS) -o $(NAME) $(LIBS)
+
+
+%.o:%.c
+	$(CC) $(CFLAGS) $(INCDIR) -g -c $< -o $@
+
+$(LIB_NAME):
+	$(MAKE) -C $(LIBDIR)
 
 clean:
-	rm -f $(SOURCES:.c=.o)
-	make -C libft clean
+	$(MAKE) clean -C $(LIBDIR)
+	rm -rf $(OBJS)
+fclean:clean
+	$(MAKE) fclean -C $(LIBDIR)
+	rm -f $(NAME)
 
-fclean: clean
-	rm -f $(NAME) libft/libft.a
+re:fclean all
 
-re: fclean all
+.PHONY:all clean fclean re
 
-bonus:
-	$(MAKE) all BONUS_FLAG=yes
-
-.PHONY: all clean libft fclean re bonus

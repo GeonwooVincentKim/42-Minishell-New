@@ -3,58 +3,85 @@
 /*                                                        :::      ::::::::   */
 /*   readline.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: geonwkim <geonwkim@student.42.fr>          +#+  +:+       +#+        */
+/*   By: hosokawa <hosokawa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/07/15 15:31:37 by geonwkim          #+#    #+#             */
-/*   Updated: 2024/08/28 23:51:11 by geonwkim         ###   ########.fr       */
+/*   Created: 2024/09/12 12:34:01 by hosokawa          #+#    #+#             */
+/*   Updated: 2024/10/23 18:27:49 by hosokawa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include	"../include/minishell.h"
-#include	"../include/error.h"
-#include	"../libft/libft.h"
-#include	<sys/wait.h>
-#include	<errno.h>
+#include "myshell.h"
 
-void	initenv(t_map **map);
-pid_t	exec_pipeline(t_node *node, t_status *status);
-int		wait_pipeline(pid_t last_pid);
-int		exec(t_node *node, t_status *last_status);
-void	interpreter(char *line, int *state_loca, t_status *status);
+volatile sig_atomic_t	g_sig_status = READLINE;
 
-void	validate_access(const char *path, const char *file_name)
+void	shell_operation(t_prompt_info *info, t_operation_info *operation)
 {
-	if (path == NULL && access(path, F_OK) < 0)
+	g_sig_status = IN_CMD;
+	operation->token = tokenizer(info, info->str);
+	if (info->yourser_err)
+		return ;
+	operation->node = parser(info, operation->token);
+	if (info->yourser_err)
+		return ;
+	expand(info, operation->node);
+	if (info->yourser_err)
+		return ;
+	prepare_redirect(info, operation->node);
+	if (info->yourser_err)
+		return ;
+	exec(info, operation->node);
+	if (info->yourser_err)
+		return ;
+}
+
+void	shell_loop(t_prompt_info *info)
+{
+	t_operation_info	operation;
+
+	operation.token = NULL;
+	operation.node = NULL;
+	info->str = readline("minishell:");
+	if (info->str == NULL)
 	{
-		if (ft_strchr(file_name, '/'))
+		info->shell_finish = 1;
+		write(STDOUT_FILENO, "exit\n", 5);
+	}
+	else
+	{
+		if (*(info->str))
 		{
-			ft_putstr_fd("minishell: ", 2);
-			perror(file_name);
+			add_history(info->str);
+			shell_operation(info, &operation);
+			free_operation(operation);
 		}
-		else
-			error_exit(file_name, "command not found", 127);
+		free(info->str);
+		info->str = NULL;
 	}
 }
 
-int	main(void)
+int	main(int argc, char **argv, char **envp)
 {
-	char		*line;
-	t_status	status;
+	t_prompt_info	info;
 
-	initenv(&status.env_map);
-	status.last_status = 0;
-	status.syntax_error = false;
-	rl_outstream = stderr;
-	setup_signal();
-	while (1)
+	(void)argc;
+	(void)argv;
+	if (envp == NULL || envp[0] == NULL)
 	{
-		line = readline("minishell$ ");
-		if (line == NULL)
-			break ;
-		if (*line)
-			add_history(line);
-		interpreter(line, &status.last_status, &status);
-		free(line);
+		write(STDERR_FILENO, "need environ\n", 14);
+		return (1);
 	}
-	exit(status.last_status);
+	init_signal();
+	info_init(&info, envp);
+	if (info.shell_finish != 1)
+	{
+		while (info.shell_finish != 1)
+		{
+			g_sig_status = READLINE;
+			shell_loop(&info);
+			info.yourser_err = 0;
+		}
+		clear_history();
+	}
+	clear_info(&info);
+	return (info.last_status);
 }

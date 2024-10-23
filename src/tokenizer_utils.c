@@ -3,34 +3,74 @@
 /*                                                        :::      ::::::::   */
 /*   tokenizer_utils.c                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: geonwkim <geonwkim@student.42.fr>          +#+  +:+       +#+        */
+/*   By: hosokawa <hosokawa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/07/15 15:37:55 by geonwkim          #+#    #+#             */
-/*   Updated: 2024/08/25 18:08:31 by geonwkim         ###   ########.fr       */
+/*   Created: 2024/09/17 11:45:01 by hosokawa          #+#    #+#             */
+/*   Updated: 2024/10/23 18:48:19 by hosokawa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include	"../include/minishell.h"
+#include "myshell.h"
 
-bool	is_blank(char c)
+// EOFトークンのサイズは数えることができない。これは後で考えよう。
+int	token_size(t_token_info *token)
 {
-	return (c == ' ' || c == '\t' || c == '\n');
+	int	token_size;
+
+	token_size = 0;
+	while (token->next != NULL)
+	{
+		token = token->next;
+		token_size++;
+	}
+	return (token_size);
 }
 
-bool	is_metacharacter(char c)
+char	**token2argv(t_token_info *token)
 {
-	if (is_blank(c))
+	char	**tk_argv;
+	char	*tk_str;
+	int		i;
+
+	tk_argv = minishell_malloc(sizeof(char *) * token_size(token) + 1);
+	i = 0;
+	while (token->next != NULL)
+	{
+		tk_str = minishell_strdup(token->word);
+		tk_argv[i] = tk_str;
+		i++;
+		token = token->next;
+	}
+	tk_argv[i] = NULL;
+	return (tk_argv);
+}
+
+bool	is_meta(char c)
+{
+	if (c && ft_strchr("|&;()<> \t\n", c))
 		return (true);
-	return (c && ft_strchr("|&;()<> \t\n", c));
+	return (false);
 }
 
-// startswith
-bool	operators_cmp(char *str, char *key_op)
+bool	is_same_top(char *s, char *keyword)
 {
-	return (ft_memcmp(str, key_op, ft_strlen(key_op)) == 0);
+	if (ft_memcmp(s, keyword, ft_strlen(keyword)) == 0)
+		return (true);
+	return (false);
 }
 
-bool	is_word(char *s)
+bool	is_operand(char *prompt)
 {
-	return (*s && !is_metacharacter(*s));
+	size_t	i;
+	char	*operators[13];
+
+	init_operators(operators);
+	i = 0;
+	while (i < sizeof(operators) / sizeof(*operators))
+	{
+		if (is_same_top(prompt, operators[i]))
+			return (true);
+		i++;
+	}
+	return (false);
 }

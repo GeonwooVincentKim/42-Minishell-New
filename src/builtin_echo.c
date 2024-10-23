@@ -3,84 +3,55 @@
 /*                                                        :::      ::::::::   */
 /*   builtin_echo.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: geonwkim <geonwkim@student.42.fr>          +#+  +:+       +#+        */
+/*   By: hosokawa <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/08/30 00:43:59 by geonwkim          #+#    #+#             */
-/*   Updated: 2024/09/08 22:21:09 by geonwkim         ###   ########.fr       */
+/*   Created: 2024/10/15 10:40:44 by hosokawa          #+#    #+#             */
+/*   Updated: 2024/10/22 13:22:51 by hosokawa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/minishell.h"
-#include "../include/builtin.h"
+#include "myshell.h"
 
-// int	builtin_echo(char **argv)
-// {
-// 	bool	is_first_arg;
-// 	bool	echo_newline;
-// 	size_t	i;
-
-// 	i = 1;
-// 	echo_newline = true;
-// 	if (argv[1] && ft_strncmp(argv[1], "-n", 2) == 0)
-// 	{
-// 		i++;
-// 		echo_newline = false;
-// 	}
-// 	is_first_arg = true;
-// 	while (argv[i])
-// 	{
-// 		if (!is_first_arg)
-// 			write(STDOUT_FILENO, " ", 1);
-// 		is_first_arg = false;
-// 		write(STDOUT_FILENO, argv[i], ft_strlen(argv[i]));
-// 		i++;
-// 	}
-// 	if (echo_newline)
-// 		write(STDOUT_FILENO, "\n", 1);
-// 	return (0);
-// }
-
-static bool	is_n_flag(char *arg)
+int	is_option_n(const char *arg)
 {
-	size_t	j;
+	int	i;
 
-	if (ft_strncmp(arg, "-n", 2) != 0)
-		return (false);
-	j = 2;
-	while (arg[j] == 'n')
-		j++;
-	return (arg[j] == '\0');
+	if (arg[0] != '-')
+		return (0);
+	i = 1;
+	if (arg[i] != 'n')
+		return (0);
+	while (arg[i] == 'n')
+		i++;
+	if (arg[i] != '\0')
+		return (0);
+	return (1);
 }
 
-static void	print_args(char **argv, size_t i)
+int	builtin_echo(t_prompt_info *info, char **argv)
 {
-	bool	is_first_arg;
+	size_t	i;
+	int		new_line_flag;
+	int		first_flag;
 
-	is_first_arg = true;
+	(void)info;
+	i = 1;
+	new_line_flag = 1;
+	while (argv[i] && is_option_n(argv[i]))
+	{
+		i++;
+		new_line_flag = 0;
+	}
+	first_flag = 1;
 	while (argv[i])
 	{
-		if (!is_first_arg)
+		if (first_flag == 0)
 			write(STDOUT_FILENO, " ", 1);
-		is_first_arg = false;
+		first_flag = 0;
 		write(STDOUT_FILENO, argv[i], ft_strlen(argv[i]));
 		i++;
 	}
-}
-
-int	builtin_echo(char **argv)
-{
-	bool	echo_newline;
-	size_t	i;
-
-	i = 1;
-	echo_newline = true;
-	while (argv[i] && is_n_flag(argv[i]))
-	{
-		echo_newline = false;
-		i++;
-	}
-	print_args(argv, i);
-	if (echo_newline)
+	if (new_line_flag == 1)
 		write(STDOUT_FILENO, "\n", 1);
 	return (0);
 }

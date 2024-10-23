@@ -3,143 +3,123 @@
 /*                                                        :::      ::::::::   */
 /*   builtin_cd.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: geonwkim <geonwkim@student.42.fr>          +#+  +:+       +#+        */
+/*   By: hosokawa <hosokawa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/08/26 21:30:51 by geonwkim          #+#    #+#             */
-/*   Updated: 2024/09/10 22:14:37 by geonwkim         ###   ########.fr       */
+/*   Created: 2024/10/08 13:36:52 by hosokawa          #+#    #+#             */
+/*   Updated: 2024/10/23 18:51:20 by hosokawa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include	"../include/minishell.h"
-#include	"../include/builtin.h"
+#include "myshell.h"
 
-bool	consume_path(char **rest, char *path, char *element)
+void	delete_last_path_element(char *path)
+{
+	int	i;
+	int	last_slash_position;
+
+	i = 0;
+	last_slash_position = -1;
+	while (path[i])
+	{
+		if (path[i] == '/')
+			last_slash_position = i;
+		i++;
+	}
+	if (last_slash_position == -1)
+	{
+		path[0] = '\0';
+	}
+	else if (last_slash_position == 0)
+	{
+		path[1] = '\0';
+	}
+	else
+	{
+		path[last_slash_position] = '\0';
+	}
+}
+
+void	append_path_element(char *new_pwd, char **path_ppt, char *path)
 {
 	size_t	element_len;
+	char	element[PATH_MAX];
 
-	element_len = ft_strlen(element);
-	if (ft_strncmp(path, element, element_len) == 0)
-	{
-		if (path[element_len] == '\0' || path[element_len] == '/')
-		{
-			*rest = path + element_len;
-			return (true);
-		}
-	}
-	return (false);
+	element_len = 0;
+	while (path[element_len] && path[element_len] != '/')
+		element_len++;
+	if (new_pwd[ft_strlen(new_pwd) - 1] != '/')
+		ft_strlcat(new_pwd, "/", PATH_MAX);
+	ft_strlcpy(element, path, element_len + 1);
+	ft_strlcat(new_pwd, element, PATH_MAX);
+	*path_ppt = path + element_len;
 }
 
-void	delete_last_element(char *path)
+char	*make_pwd(char *old_pwd, char *path)
 {
-	char	*start;
-	char	*last_slash_ptr;
+	char	new_pwd[PATH_MAX];
+	char	*dynamic_new_pwd;
 
-	start = path;
-	last_slash_ptr = NULL;
-	while (*path)
-	{
-		if (*path == '/')
-			last_slash_ptr = path;
-		path++;
-	}
-	if (last_slash_ptr != start)
-		*last_slash_ptr = '\0';
-}
-
-void	append_path_element(char *dst, char **rest, char *src)
-{
-	size_t	elm_len;
-
-	elm_len = 0;
-	while (src[elm_len] && src[elm_len] != '/')
-		elm_len++;
-	if (dst[ft_strlen(dst) - 1] != '/')
-		ft_strcat(dst, "/");
-	ft_strncat(dst, src, elm_len);
-	*rest = src + elm_len;
-}
-
-char	*resolve_pwd(char *oldpwd, char *path)
-{
-	char	newpwd[PATH_MAX];
-	char	*dup;
-
-	if (oldpwd == NULL)
+	if (old_pwd == NULL)
 		return (NULL);
 	if (*path == '/')
-		ft_strlcpy(newpwd, "/", PATH_MAX);
+		ft_strlcpy(new_pwd, "/", PATH_MAX);
 	else
-		ft_strlcpy(newpwd, oldpwd, PATH_MAX);
+		ft_strlcpy(new_pwd, old_pwd, PATH_MAX);
 	while (*path)
 	{
-		if (*path == '/')
+		if ((*path) == '/')
 			path++;
-		else if (consume_path(&path, path, "."))
+		else if (check_skip_path(&path, path, "."))
 			;
-		else if (consume_path(&path, path, ".."))
-			delete_last_element(newpwd);
+		else if (check_skip_path(&path, path, ".."))
+			delete_last_path_element(new_pwd);
 		else
-			append_path_element(newpwd, &path, path);
+			append_path_element(new_pwd, &path, path);
 	}
-	dup = ft_strdup(newpwd);
-	if (dup == NULL)
-		fatal_error("strdup");
-	return (dup);
+	dynamic_new_pwd = minishell_strdup(new_pwd);
+	return (dynamic_new_pwd);
 }
 
-// if (home == NULL), builtin_error("cd", NULL, "HOME not set");
-int	builtin_cd(char **argv, t_map *envmap)
+void	copy_home_value(t_prompt_info *info, char *path)
+{
+	char	*home;
+
+	home = item_value_get(info->map, "HOME");
+	if (home == NULL)
+	{
+		free(home);
+		minishell_yourser_perror(info, "fild to get home value");
+		return ;
+	}
+	ft_strlcpy(path, home, PATH_MAX);
+	free(home);
+}
+
+int	builtin_cd(t_prompt_info *info, char **argv)
 {
 	char	path[PATH_MAX];
-	char	*newpwd;
-	char	*oldpwd;
+	char	*old_pwd;
+	char	*new_pwd;
 
-	oldpwd = map_get(envmap, "PWD");
-	map_set(envmap, "OLDPWD", oldpwd);
-	if (!argv[1])
+	old_pwd = item_value_get(info->map, "PWD");
+	item_set(info->map, "OLDPWD", old_pwd);
+	if (argv[1] == NULL)
 	{
-		if (!(map_get(envmap, "HOME")))
-			return (builtin_error("cd", NULL, "HOME not set"), 1);
-		ft_strlcpy(path, map_get(envmap, "HOME"), PATH_MAX);
+		copy_home_value(info, path);
+		if (info->yourser_err == 1)
+			return (1);
 	}
 	else
 		ft_strlcpy(path, argv[1], PATH_MAX);
 	if (chdir(path) < 0)
-		return (builtin_error("cd", NULL, "No such file or directory"), 1);
-	newpwd = resolve_pwd(oldpwd, path);
-	map_set(envmap, "PWD", newpwd);
-	free(newpwd);
+	{
+		minishell_yourser_perror(info, "faild to chdir");
+		free(old_pwd);
+		return (1);
+	}
+	new_pwd = make_pwd(old_pwd, path);
+	item_set(info->map, "PWD", new_pwd);
+	free(old_pwd);
+	free(new_pwd);
 	return (0);
 }
-
-// int	builtin_cd(char **argv, t_map *envmap)
-// {
-// 	char	*home;
-// 	char	*oldpwd;
-// 	char	path[PATH_MAX];
-// 	char	*newpwd;
-
-// 	oldpwd = map_get(envmap, "PWD");
-// 	map_set(envmap, "OLDPWD", oldpwd);
-// 	if (argv[1] == NULL)
-// 	{
-// 		home = map_get(envmap, "HOME");
-// 		if (home == NULL)
-// 		{
-// 			builtin_error("cd", NULL, "HOME not set");
-// 			return (1);
-// 		}
-// 		ft_strlcpy(path, home, PATH_MAX);
-// 	}
-// 	else
-// 		ft_strlcpy(path, argv[1], PATH_MAX);
-// 	if (chdir(path) < 0)
-// 	{
-// 		builtin_error("cd", NULL, "chdir");
-// 		return (1);
-// 	}
-// 	newpwd = resolve_pwd(oldpwd, path);
-// 	map_set(envmap, "PWD", newpwd);
-// 	free(newpwd);
-// 	return (0);
-// }
