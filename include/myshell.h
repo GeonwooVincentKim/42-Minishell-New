@@ -341,10 +341,16 @@ int								command_comunication(t_prompt_info *info,
 ////////////////////////////////////
 // path_finder
 ////////////////////////////////////
+// main
 char							*cut_and_move_env(char **path_env);
 char							*make_command_path(char *command,
 									char *unit_path);
 char							*path_get(t_prompt_info *info, char *command);
+// utils
+size_t							ft_strspn(const char *s, const char *accept);
+size_t							ft_strcspn(const char *s, const char *reject);
+char							*ft_strtok_r(char *str, const char *delim,
+									char **saveptr);
 ////////////////////////////////////
 /// pipe
 ////////////////////////////////////
@@ -424,6 +430,8 @@ void							parser_error(t_prompt_info *info,
 /////////////////////////////////
 // ft_atol
 long							ft_atol(const char *str, int *error_flag);
+// close_safely
+int								close_safely(int fd);
 // first
 void							*minishell_malloc(size_t size);
 void							*minishell_calloc(size_t count, size_t size);
